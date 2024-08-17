@@ -1,17 +1,34 @@
 package main
 
 import (
-	"dupfinder/internal/views"
-	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
-	"github.com/a-h/templ"
+	"dupfinder/internal/handler"
+	"dupfinder/internal/service"
 )
 
 func main() {
-	index := views.Index()
-	http.Handle("/", templ.Handler(index))
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-	fmt.Println("Listening on : 3000")
-	http.ListenAndServe(":3000", nil)
+	s := service.New(log)
+	h := handler.New(log, s)
+
+	http.HandleFunc("/", h.RenderPage)
+
+	http.HandleFunc("/info", h.SystemInfo)
+	http.HandleFunc("/current", h.CurrentUsage)
+
+	server := &http.Server{
+		Addr:         "localhost:9000",
+		Handler:      nil,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+
+	log.Info("Listening on : ", server.Addr, "")
+
+	server.ListenAndServe()
 }
