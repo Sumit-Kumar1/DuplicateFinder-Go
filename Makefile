@@ -1,10 +1,7 @@
 # run : generate templ and run the project
-generate:
-	templ generate
+run:
+	go run cmd/main.go
 
-run: generate
-	@go run cmd/main.go
-
-lint: generate
+lint:
 	go fmt ./...
 	golangci-lint run ./...	
