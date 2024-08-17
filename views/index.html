@@ -1,0 +1,30 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="System info and duplicate finder" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
+    <title>Duplicate Finder</title>
+</head>
+
+<body>
+    <button class="btn btn-active btn-accent" hx-get="/info" hx-target="#sysinfo">Get System-Info</button>
+</body>
+</html>
+{{end}}
+
+{{block "sysinfo" .}}
+<div id="sysinfo">
+    <p>Machine Name: {{.HostName}}</p>
+    <p>OS: {{.OS}}</p>
+    <p>Architecture: {{.Arch}}</p>
+    <p>CPU: {{.CPU}}</p>
+    <p>RAM: {{.RAM}}</p>
+    <p>GPU: {{.GPU}}</p>
+</div>
+{{end}}
