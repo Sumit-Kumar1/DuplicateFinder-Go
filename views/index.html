@@ -8,23 +8,59 @@
     <meta name="description" content="System info and duplicate finder" />
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com" defer></script>
-    <script src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2"
+        integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous">
+    </script>
+    <style>
+        .htmx-indicator{
+            display: none;
+            transition: display 500ms ease-in;
+        }
+        .htmx-request .htmx-indicator{
+            display: inline;
+        }
+        .htmx-request.htmx-indicator{
+            display: inline;
+        }
+    </style>
     <title>Duplicate Finder</title>
 </head>
 
 <body>
-    <button class="btn btn-active btn-accent" hx-get="/info" hx-target="#sysinfo">Get System-Info</button>
+    <button class="btn btn-active btn-accent" hx-get="/info" hx-swap="outerHTML" hx-indicator="#spinner">Get System-Info {{template "loadingg"}}</button>
+
 </body>
+
 </html>
 {{end}}
 
-{{block "sysinfo" .}}
-<div id="sysinfo">
-    <p>Machine Name: {{.HostName}}</p>
-    <p>OS: {{.OS}}</p>
-    <p>Architecture: {{.Arch}}</p>
-    <p>CPU: {{.CPU}}</p>
-    <p>RAM: {{.RAM}}</p>
-    <p>GPU: {{.GPU}}</p>
-</div>
+{{block "loadingg" . }}
+    <span class="htmx-indicator loading loading-infinity loading-lg" id="spinner"></span>
 {{end}}
+
+{{block "sysinfo" .}}
+    <div id="sysinfo" class="border border-blue-500 p-5">
+        <p>Machine Name: {{.HostName}}</p>
+        <p>OS: {{.OS}}</p>
+        <p>Architecture: {{.Arch}}</p>
+        <div> CPU :
+            <p>Name : {{.CPU.Name}}</p>
+            <p>Device ID : {{.CPU.DeviceID}}</p>
+            <p>Manufacturer : {{.CPU.Manufacturer}}</p>
+            <p>MaxClockSpeed : {{.CPU.MaxClockSpeed}}</p>
+            <p>SockDesignation : {{.CPU.SocketDesignation}}</p>
+        </div>
+        <p>RAM: {{.RAM}}</p>
+        <p>GPU: {{.GPU}}</p>
+    </div>
+        <div hx-get="/current" hx-swap="innerHTML" hx-trigger="every 3s"></div>
+{{end}}
+
+
+{{ block "usages" . }}
+    <div class="border border-blue-500 p-5">
+        <p>CPU: {{.CPU.Value}} {{.CPU.UOM}}</p>
+        <p>RAM: {{.RAM.Value}} {{.RAM.UOM}}</p>
+        <p>GPU: {{.GPU.Value}} {{.GPU.UOM}}</p>
+    </div>
+{{ end }}

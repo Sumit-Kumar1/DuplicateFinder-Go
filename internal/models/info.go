@@ -1,13 +1,13 @@
 package models
 
 type SystemInfo struct {
-	HostName *string   `json:"hostname"`
-	OS       *string   `json:"os"`
-	Arch     *string   `json:"architecture"`
-	Disk     *DiskInfo `json:"disk"`
-	CPU      *CPUInfo  `json:"cpu"`
-	RAM      *RAMInfo  `json:"ram"`
-	GPU      *GPUInfo  `json:"gpu"`
+	HostName           string
+	OS                 string
+	Arch               string
+	BIOSReleaseDate    string
+	BIOSVersion        string
+	SystemManufacturer string
+	SystemProductName  string
 }
 
 type RAMInfo struct {
@@ -40,7 +40,6 @@ type DiskInfo struct {
 }
 
 type CPUInfo struct {
-	Caption           string `json:"Caption"`
 	DeviceID          string `json:"DeviceID"`
 	Manufacturer      string `json:"Manufacturer"`
 	MaxClockSpeed     int    `json:"MaxClockSpeed"`

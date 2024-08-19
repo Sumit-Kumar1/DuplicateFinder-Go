@@ -48,11 +48,9 @@ func (h *Handler) SystemInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.templ.ExecuteTemplate(w, "sysInfo", map[string]any{
-		"Data": *info,
-	})
+	err = h.templ.ExecuteTemplate(w, "sysinfo", *info)
 	if err != nil {
-		h.Log.Error("error in template execution", err)
+		h.Log.Error("error in template execution", "error", err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -61,9 +59,28 @@ func (h *Handler) SystemInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CurrentUsage(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
+	usage, err := h.Service.CurrentUsage()
+	if err != nil {
+		h.Log.Error("error while getting current usage info: ", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if usage == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	err = h.templ.ExecuteTemplate(w, "usages", usage)
+	if err != nil {
+		h.Log.Error("error in template execution", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

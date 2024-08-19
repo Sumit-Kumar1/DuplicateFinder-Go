@@ -28,7 +28,9 @@ func main() {
 		WriteTimeout: time.Second * 10,
 	}
 
-	log.Info("Listening on : ", server.Addr, "")
+	log.Info("server started: ", "host:port->", server.Addr)
 
-	server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil {
+		log.Error("error in starting up server: ", "error", err)
+	}
 }

@@ -3,38 +3,66 @@ package service
 import (
 	"dupfinder/internal/models"
 	"fmt"
+	"golang.org/x/sys/windows/registry"
 	"log"
 	"os/exec"
 )
 
-func getInfo[T models.RAMInfo | models.CPUInfo | models.DiskInfo | models.GPUInfo](device string, data T) (*T, error) {
+// getSystemInfo get the system information from registry
+func getSystemInfo() (*models.SystemInfo, error) {
 	var (
-		deviceClass string
+		info models.SystemInfo
+		err  error
 	)
-
-	switch device {
-	case "CPU":
-		deviceClass = win32_Processor
-	case "RAM":
-		deviceClass = win32_PhysicalMemory
-	case "Disk":
-		deviceClass = win32_DiskDrive
-	default:
-		deviceClass = win32_Processor
-	}
-
-	out, err := runCommand("pwsh", getWmiObj, class, deviceClass)
-	if err != nil {
-		return nil, err
-	}
-
-	valMap := parseOutput(out)
-
-	log.Printf("Output: %+v", valMap)
 
 	return nil, nil
 }
 
+func basicInfo() (*models.SystemInfo, error) {
+	var info models.SystemInfo
+
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, registrySysInfo, registry.QUERY_VALUE)
+	if err != nil {
+		return nil, err
+	}
+
+	defer k.Close()
+
+	info.SystemProductName, _, err = k.GetStringValue("SystemProductName")
+	if err != nil {
+		return nil, err
+	}
+
+	info.SystemManufacturer, _, err = k.GetStringValue("SystemManufacturer")
+	if err != nil {
+		return nil, err
+	}
+
+	info.BIOSVersion, _, err = k.GetStringValue("BIOSVersion")
+	if err != nil {
+		return nil, err
+	}
+
+	info.BIOSReleaseDate, _, err = k.GetStringValue("BIOSReleaseDate")
+	if err != nil {
+		return nil, err
+	}
+
+	return &info, nil
+}
+
+func winInfo() (*models.SystemInfo, error) {
+	var info models.SystemInfo
+
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, registryWinInfo, registry.QUERY_VALUE)
+	if err != nil {
+		return nil, err
+	}
+
+	defer k.Close()
+
+	return &info, nil
+}
 func runCommand(cmd string, args ...string) ([]byte, error) {
 	command := exec.Command(cmd, "-NoProfile", "-NonInteractive")
 
@@ -62,23 +90,4 @@ func runCommand(cmd string, args ...string) ([]byte, error) {
 	log.Printf("output: %s\n", out)
 
 	return out, nil
-}
-
-func parseOutput(output []byte) map[string]string {
-	vals := make(map[string]string)
-
-	//TODO: write parse logic here
-
-	vals["Caption"] = "Intel64 Family 6 Model 158 Stepping 10"
-	vals["DeviceID"] = "CPU0"
-	vals["Manufacturer"] = "GenuineIntel"
-	vals["MaxClockSpeed"] = "2592"
-	vals["Name"] = "Intel (R) Core(TM) i7-9750H CPU @ 2.60GHz"
-	vals["SocketDesignation"] = "U3E1"
-
-	return vals
-}
-
-func getStrRef(str string) *string {
-	return &str
 }
