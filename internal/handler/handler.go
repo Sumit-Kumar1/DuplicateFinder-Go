@@ -13,7 +13,7 @@ type Handler struct {
 }
 
 func New(log *slog.Logger, s Servicer) *Handler {
-	tmpl := template.Must(template.ParseGlob("views/index.html"))
+	tmpl := template.Must(template.ParseGlob("views/*.html"))
 	return &Handler{
 		templ:   tmpl,
 		Log:     log,
@@ -21,7 +21,7 @@ func New(log *slog.Logger, s Servicer) *Handler {
 	}
 }
 
-func (h *Handler) RenderPage(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RenderPage(w http.ResponseWriter, _ *http.Request) {
 	if err := h.templ.ExecuteTemplate(w, "index", nil); err != nil {
 		h.Log.Error("error in template:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -38,7 +38,6 @@ func (h *Handler) SystemInfo(w http.ResponseWriter, r *http.Request) {
 	info, err := h.Service.SysInfo()
 	if err != nil {
 		h.Log.Error("error while gettting system info: ", err)
-
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -51,15 +50,11 @@ func (h *Handler) SystemInfo(w http.ResponseWriter, r *http.Request) {
 	err = h.templ.ExecuteTemplate(w, "sysinfo", *info)
 	if err != nil {
 		h.Log.Error("error in template execution", "error", err)
-
 		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
 }
 
 func (h *Handler) CurrentUsage(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -78,6 +73,34 @@ func (h *Handler) CurrentUsage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.templ.ExecuteTemplate(w, "usages", usage)
+	if err != nil {
+		h.Log.Error("error in template execution", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) DuplicateFind(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.Log.Error("method is not allowed")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	queryParams := r.URL.Query()
+	device := queryParams.Get("device")
+
+	h.Log.Info("got duplicate finding request for", "device", device)
+
+	duplicates, err := h.Service.Duplicate(device)
+	if err != nil {
+		h.Log.Error("error while duplicate finding disk info: ", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	err = h.templ.ExecuteTemplate(w, "duplicates", duplicates)
 	if err != nil {
 		h.Log.Error("error in template execution", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)

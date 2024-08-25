@@ -20,6 +20,7 @@ func main() {
 
 	http.HandleFunc("/info", h.SystemInfo)
 	http.HandleFunc("/current", h.CurrentUsage)
+	http.HandleFunc("/dupFinder", h.DuplicateFind)
 
 	server := &http.Server{
 		Addr:         "localhost:9000",
