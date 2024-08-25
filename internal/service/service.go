@@ -4,6 +4,7 @@ import (
 	"dupfinder/internal/models"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -22,6 +23,7 @@ func New(log *slog.Logger) *Service {
 
 func (s *Service) SysInfo() (*models.SystemInfo, error) {
 	var memDivisor = 1024 * 1024 * 1024
+
 	host, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -33,6 +35,11 @@ func (s *Service) SysInfo() (*models.SystemInfo, error) {
 	}
 
 	v, err := mem.VirtualMemory()
+	if err != nil {
+		return nil, err
+	}
+
+	disks, err := getDiskInfo()
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +58,7 @@ func (s *Service) SysInfo() (*models.SystemInfo, error) {
 		Mem: models.MemoryInfo{
 			Total: v.Total / uint64(memDivisor),
 		},
+		Disks: disks,
 	}
 
 	return systemInfo, nil
@@ -81,20 +89,61 @@ func (s *Service) CurrentUsage() (*models.Usage, error) {
 			UOM:   "%",
 		},
 	}, nil
-
 }
 
-func getTotalCPU() (*float64, error) {
-	vals, err := cpu.Percent(0, false)
+func (s *Service) Duplicate(device string) (map[string][]models.File, error) {
+	files := make(map[string][]models.File) // map to store the files and their hashes
+
+	// Check if the device exists
+	if _, err := os.Stat(device); os.IsNotExist(err) {
+		s.Log.Error("Device %s does not exist", "device", device)
+		return nil, err
+	}
+
+	f, err := os.Open(device)
+	if err != nil {
+		s.Log.Error("Error opening device", "error", err)
+		return nil, err
+	}
+
+	defer f.Close()
+
+	//logic for finding the duplicate
+	err = filepath.Walk(device, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+
+			defer f.Close()
+
+			// Calculate the hash of the file
+			hash := calculateHash(f)
+
+			// Check if the hash is already in the map
+			if files[hash] != nil {
+				files[hash] = append(files[hash], models.File{ID: generateID(), Name: f.Name(), Path: path, Hash: hash})
+			} else {
+				files[hash] = []models.File{{Path: path, Hash: hash}}
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var total float64 = 0
-
-	for i := range vals {
-		total += vals[i]
+	for key, vals := range files { //delete non duplicate entries from map
+		if len(vals) <= 1 {
+			delete(files, key)
+		}
 	}
 
-	return &total, nil
+	return files, nil
 }
