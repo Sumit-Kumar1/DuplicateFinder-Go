@@ -42,7 +42,7 @@
 {{end}}
 
 {{block "sysinfo" .}}
-<div id="sysinfo" class="border border-blue-500 p-5">
+<div id="sysinfo" class="border border-blue-500 p-5 m-2">
     <p>Machine Name: {{.HostName}}</p>
     <p>OS: {{.OS}}</p>
     <p>CPU Architecture: {{.CPUArch}}</p>
@@ -53,24 +53,68 @@
 
 
 {{ block "usages" . }}
-<div class="border border-blue-500 p-5">
+<div class="border border-blue-500 p-5 m-2">
     <p>CPU: {{.CPU.Value}} {{.CPU.UOM}}</p>
     <p>RAM: {{.RAM.Value}} {{.RAM.UOM}}</p>
     <p>GPU: {{.GPU.Value}} {{.GPU.UOM}}</p>
 </div>
 {{ end }}
 
-{{block "Info" .}}
+{{ block "Info" . }}
 <div>
-    <div>
+    <div class="p-3 border-2 border-dotted rounded">
         <p>Model Name: {{.CPU.ModelName}}</p>
         <p>Model Identifier: {{.CPU.ModelIdentifier}}</p>
         <p>Processor Name: {{.CPU.ProcessorName}}</p>
         <p>Processor Speed: {{.CPU.ProcessorSpeed}} Mhz</p>
         <p>Number of Cores: {{.CPU.Cores}}</p>
     </div>
-    <div>
+    <div class="p-3 border-2 border-dotted m-2 rounded">
         <p>Total Memory: {{.Mem.Total}} GB</p>
     </div>
+    <div class="flex flex-row">
+        {{range .Disks}}
+        <div class="p-3 border-2 border-dotted m-2 rounded">
+            <p>Device : {{.Device}}</p>
+            <p>MountPoint : {{.Mount}}</p>
+            <p>FsType : {{.FsType}}</p>
+            <div class="m-2">
+                <p>Total Space: {{.Usage.Total}} </p>
+                <p>Used Space: {{.Usage.Used}} </p>
+                <p>Free Space: {{.Usage.Free}} </p>
+                <p>Used Percent: {{.Usage.UsedPercent}} %</p>
+            </div>
+
+            <button hx-get="/dupFinder?device={{.Mount}}" class="btn btn-accent">Check Duplicates</button>
+        </div>
+        {{end}}
+    </div>
 </div>
-{{end}}
+{{ end }}
+
+{{ block "duplicates" . }}
+    <div class="overflow-x-auto flex gap-5">
+        {{ range $hash, $files := . }}
+        <table class="table" id={{ $hash }}>
+            <thead>
+            <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Path</th>
+                <th>Hash</th>
+            </tr>
+            </thead>
+            <tbody>
+                {{ range $files }}
+                    <tr class="hover">
+                        <th>{{ .ID }}</th>
+                        <th>{{ .Name }}</th>
+                        <td>{{ .Path }}</td>
+                        <td>{{ .hash }}</td>
+                    </tr>
+                {{ end }}
+            </tbody>
+        </table>
+        {{ end }}
+    </div>
+{{ end }}
